@@ -1,102 +1,159 @@
-# golden-dataset-mcp
+# MCP Registry
 
-An [MCP](https://modelcontextprotocol.io) server wrapping [`golden-dataset-studio`](https://pypi.org/project/golden-dataset-studio/) — version-controlled golden dataset management and semantic evaluation for RAG/LLM pipelines.
+The MCP registry provides MCP clients with a list of MCP servers, like an app store for MCP servers.
 
-This is a thin protocol layer over the existing `golden_dataset` library (`DatasetStore`, `Evaluator`). It does not reimplement any logic — it exposes the library's existing Python API as MCP tools so an agent (Claude Desktop, Claude Code, or any MCP client) can manage golden datasets conversationally.
+📖 **[Full documentation](./docs)**
 
-**No LLM API key required.** Evaluation uses TF-IDF cosine similarity (scikit-learn), not an LLM call.
+## Development Status
 
-## Why a separate package from `golden-dataset-studio`?
+> [!WARNING]  
+> The registry is under [active development](#development-status). The registry API spec is unstable and the official MCP registry database may be wiped at any time.
 
-`golden-dataset-studio` is a CLI tool — designed for a human typing `golden add`, `golden commit`, etc. in a terminal. `golden-dataset-mcp` exposes the same underlying operations as MCP tools so an LLM agent can drive them programmatically, e.g. as part of an automated RAG evaluation pipeline. Keeping them as separate PyPI packages means CLI users aren't forced to pull in `fastmcp` as a dependency, and MCP users get a clean, protocol-focused package.
+**2025-09-04 update**: We're targeting a 'preview' go-live on 8th September. This may still be unstable and not provide durability guarantees, but is a step towards being more solidified. A general availability (GA) release will follow later.
 
-## Tools
+Current key maintainers:
+- **Adam Jones** (Anthropic) [@domdomegg](https://github.com/domdomegg)  
+- **Tadas Antanavicius** (PulseMCP) [@tadasant](https://github.com/tadasant)
+- **Toby Padilla** (GitHub) [@toby](https://github.com/toby)
 
-| Tool | What it does |
-|---|---|
-| `init_dataset` | Initialise a new dataset at a given path |
-| `add_entry` | Add a question/answer pair to the working tree |
-| `update_entry` | Edit fields of an existing working-tree entry |
-| `delete_entry` | Remove an entry from the working tree |
-| `list_entries` | List working-tree or committed-version entries |
-| `commit_version` | Snapshot the working tree as a new immutable version |
-| `diff_versions` | Show entries added/removed/changed between two versions |
-| `evaluate_answers` | Score actual answers against a version via TF-IDF cosine similarity |
-| `dataset_status` | Show current version, working tree size, and version history |
+## Contributing
 
-## Design: every tool takes an explicit `dataset_path`
+We use multiple channels for collaboration - see [modelcontextprotocol.io/community/communication](https://modelcontextprotocol.io/community/communication).
 
-Unlike the CLI (which operates on the current working directory), every tool here requires an explicit `dataset_path` parameter. This keeps the server fully stateless between calls — no hidden "current dataset" session state to lose track of, and safe for one server instance to manage multiple datasets or serve multiple concurrent clients.
+Often (but not always) ideas flow through this pipeline:
 
-## Installation
+- **[Discord](https://modelcontextprotocol.io/community/communication)** - Real-time community discussions
+- **[Discussions](https://github.com/modelcontextprotocol/registry/discussions)** - Propose and discuss product/technical requirements
+- **[Issues](https://github.com/modelcontextprotocol/registry/issues)** - Track well-scoped technical work  
+- **[Pull Requests](https://github.com/modelcontextprotocol/registry/pulls)** - Contribute work towards issues
 
-```bash
-pip install golden-dataset-mcp
-```
+### Quick start:
 
-This pulls in `golden-dataset-studio` automatically as a dependency.
+#### Pre-requisites
 
-## Usage with Claude Desktop / Claude Code
+- **Docker**
+- **Go 1.24.x** 
+- **golangci-lint v2.4.0**
 
-```json
-{
-  "mcpServers": {
-    "golden-dataset": {
-      "command": "golden-dataset-mcp"
-    }
-  }
-}
-```
-
-No environment variables needed — no API key, no config.
-
-## Example flow
-
-```
-1. init_dataset(dataset_path="./my-rag-eval", name="support-bot-eval")
-2. add_entry(dataset_path="./my-rag-eval", question="...", answer="...")
-   [repeat for each golden Q&A pair]
-3. commit_version(dataset_path="./my-rag-eval", description="initial 50 questions")
-4. [run your RAG pipeline, collect actual answers]
-5. evaluate_answers(dataset_path="./my-rag-eval", actual_answers=[...])
-   -> avg_semantic_similarity, per-entry scores, pass/fail
-```
-
-As your RAG pipeline changes over time, `commit_version` again after edits and use `diff_versions` to see exactly what changed in your golden set between releases.
-
-## Relationship to the underlying library
-
-| | `golden-dataset-studio` | `golden-dataset-mcp` |
-|---|---|---|
-| **Interface** | CLI (`golden ...`) | MCP tools |
-| **Driven by** | A human typing commands | An LLM agent / MCP client |
-| **Path handling** | Current working directory | Explicit `dataset_path` per call |
-| **Dependency direction** | — | Depends on `golden-dataset-studio` |
-
-If you want the human-driven CLI, use `golden-dataset-studio` directly. If you want an agent to drive it, use this package.
-
-## Development
+#### Running the server
 
 ```bash
-git clone https://github.com/nipunkhanderia/golden-dataset-mcp
-cd golden-dataset-mcp
-pip install -e ".[dev]" --break-system-packages
-pytest -v
+# Start full development environment
+make dev-compose
 ```
 
-Validate the MCP-facing contract:
+This starts the registry at [`localhost:8080`](http://localhost:8080) with PostgreSQL and seed data. It can be configured with environment variables in [docker-compose.yml](./docker-compose.yml) - see [.env.example](./.env.example) for a reference.
+
+<details>
+<summary>Alternative: Local setup without Docker</summary>
+
+**Prerequisites:**
+- PostgreSQL running locally
+- Go 1.24.x installed
 
 ```bash
-npx @modelcontextprotocol/inspector golden-dataset-mcp
+# Build and run locally
+make build
+make dev-local
 ```
 
-## Limitations
+The service runs on [`localhost:8080`](http://localhost:8080) by default. This can be configured with environment variables in `.env` - see [.env.example](./.env.example) for a reference.
 
-- `evaluate_answers` uses TF-IDF cosine similarity, which captures lexical overlap better than deep semantic meaning. For embedding-based or RAGAS-style metrics, call the underlying library's `Evaluator.ragas_evaluate()` directly (requires `pip install ragas datasets` — not exposed as an MCP tool in this version).
-- **Very short or stop-word-only answers will raise an error.** scikit-learn's TF-IDF vectorizer raises `ValueError: empty vocabulary` on inputs like a bare `"4"` or `"the a an"`. Avoid single-token golden answers, or expect `evaluate_answers` to fail on them.
-- All state is filesystem-backed JSON/JSONL under `<dataset_path>/.golden_dataset/`; this server does no remote storage or syncing.
-- `golden-dataset-studio` (as of 0.1.1) uses `scikit-learn` at runtime but does not declare it in its own dependencies — this package pins `scikit-learn` explicitly so `evaluate_answers` works correctly out of the box regardless of upstream's declared requirements.
+</details>
 
-## License
+<details>
+<summary>Alternative: Running a pre-built Docker image</summary>
 
-MIT
+Pre-built Docker images are automatically published to GitHub Container Registry:
+
+```bash
+# Run latest stable release
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:latest
+
+# Run latest from main branch (continuous deployment)
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main
+
+# Run specific release version
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:v1.0.0
+
+# Run development build from main branch
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main-20250906-abc123d
+```
+
+**Available tags:** 
+- **Releases**: `latest`, `v1.0.0`, `v1.1.0`, etc.
+- **Continuous**: `main` (latest main branch build)
+- **Development**: `main-<date>-<sha>` (specific commit builds)
+
+</details>
+
+#### Publishing a server
+
+To publish a server, we've built a simple CLI. You can use it with:
+
+```bash
+# Build the latest CLI
+make publisher
+
+# Use it!
+./bin/mcp-publisher --help
+```
+
+See [the publisher guide](./docs/guides/publishing/publish-server.md) for more details.
+
+#### Other commands
+
+```bash
+# Run lint, unit tests and integration tests
+make check
+```
+
+There are also a few more helpful commands for development. Run `make help` to learn more, or look in [Makefile](./Makefile).
+
+<!--
+For Claude and other AI tools: Always prefer make targets over custom commands where possible.
+-->
+
+## Architecture
+
+### Project Structure
+
+```
+├── cmd/                     # Application entry points
+│   └── publisher/           # Server publishing tool
+├── data/                    # Seed data
+├── deploy/                  # Deployment configuration (Pulumi)
+├── docs/                    # Documentation
+├── internal/                # Private application code
+│   ├── api/                 # HTTP handlers and routing
+│   ├── auth/                # Authentication (GitHub OAuth, JWT, namespace blocking)
+│   ├── config/              # Configuration management
+│   ├── database/            # Data persistence (PostgreSQL, in-memory)
+│   ├── service/             # Business logic
+│   ├── telemetry/           # Metrics and monitoring
+│   └── validators/          # Input validation
+├── pkg/                     # Public packages
+│   ├── api/                 # API types and structures
+│   │   └── v0/              # Version 0 API types
+│   └── model/               # Data models for server.json
+├── scripts/                 # Development and testing scripts
+├── tests/                   # Integration tests
+└── tools/                   # CLI tools and utilities
+    └── validate-*.sh        # Schema validation tools
+```
+
+### Authentication
+
+Publishing supports multiple authentication methods:
+- **GitHub OAuth** - For publishing by logging into GitHub
+- **GitHub OIDC** - For publishing from GitHub Actions
+- **DNS verification** - For proving ownership of a domain and its subdomains
+- **HTTP verification** - For proving ownership of a domain
+
+The registry validates namespace ownership when publishing. E.g. to publish...:
+- `io.github.domdomegg/my-cool-mcp` you must login to GitHub as `domdomegg`, or be in a GitHub Action on domdomegg's repos
+- `me.adamjones/my-cool-mcp` you must prove ownership of `adamjones.me` via DNS or HTTP challenge
+
+## More documentation
+
+See the [documentation](./docs) for more details if your question has not been answered here!
