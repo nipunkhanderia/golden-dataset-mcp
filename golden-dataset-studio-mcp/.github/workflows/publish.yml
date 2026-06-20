@@ -1,0 +1,54 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install --break-system-packages -e ".[dev]"
+      - name: Run tests
+        run: pytest -v
+
+  publish-pypi:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build package
+        run: |
+          pip install --break-system-packages build
+          python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-mcp-registry:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish to MCP Registry
+        uses: OtherVibes/mcp-publish-action@v1
+        with:
+          name: io.github.nipun-sharma/golden-dataset-mcp
+          description: "MCP server for version-controlled golden dataset management and RAG evaluation"
+          version: ${{ github.ref_name }}
+          registry_type: pypi
+          identifier: golden-dataset-mcp
+          transport_type: stdio

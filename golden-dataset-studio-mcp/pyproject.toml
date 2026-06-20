@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "golden-dataset-mcp"
+version = "0.1.0"
+description = "MCP server wrapping golden-dataset-studio for version-controlled golden dataset management and RAG evaluation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nipun Sharma" }
+]
+keywords = ["mcp", "model-context-protocol", "rag", "evaluation", "golden-dataset", "llm-testing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+dependencies = [
+    "fastmcp>=2.0.0",
+    "golden-dataset-studio>=0.1.0",
+    "pydantic>=2.0.0",
+    # golden-dataset-studio's evaluate_dataset() requires scikit-learn at
+    # runtime but does not declare it as a dependency (as of 0.1.1) — pinned
+    # here explicitly so evaluate_answers works out of the box.
+    "scikit-learn>=1.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "build>=1.0.0",
+    "twine>=5.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/nipun-sharma/golden-dataset-mcp"
+Repository = "https://github.com/nipun-sharma/golden-dataset-mcp"
+Issues = "https://github.com/nipun-sharma/golden-dataset-mcp/issues"
+
+[project.scripts]
+golden-dataset-mcp = "golden_dataset_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/golden_dataset_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
