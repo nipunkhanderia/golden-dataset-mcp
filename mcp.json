@@ -1,0 +1,8 @@
+{
+  "name": "golden-dataset-mcp",
+  "version": "0.1.1",
+  "description": "MCP server for golden dataset tools",
+  "entrypoint": "golden_dataset_mcp.server:app",
+  "package": "golden-dataset-mcp",
+  "author": "nipunkhanderia"
+}

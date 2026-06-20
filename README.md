@@ -1,3 +1,7 @@
+mcp-name: io.github.nipunkhanderia/golden-dataset-mcp
+
+# golden-dataset-mcp
+
 # MCP Registry
 
 The MCP registry provides MCP clients with a list of MCP servers, like an app store for MCP servers.
