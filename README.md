@@ -78,7 +78,7 @@ If you want the human-driven CLI, use `golden-dataset-studio` directly. If you w
 ## Development
 
 ```bash
-git clone https://github.com/nipun-sharma/golden-dataset-mcp
+git clone https://github.com/nipunkhanderia/golden-dataset-mcp
 cd golden-dataset-mcp
 pip install -e ".[dev]" --break-system-packages
 pytest -v

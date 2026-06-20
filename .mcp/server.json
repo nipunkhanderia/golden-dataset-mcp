@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/docs/reference/server-json/server.schema.json",
-  "name": "io.github.nipun-sharma/golden-dataset-mcp",
+  "name": "io.github.nipunkhanderia/golden-dataset-mcp",
   "description": "Version-controlled golden dataset management and semantic evaluation for RAG/LLM pipelines, wrapping the golden-dataset-studio library. No LLM API key required.",
   "repository": {
-    "url": "https://github.com/nipun-sharma/golden-dataset-mcp",
+    "url": "https://github.com/nipunkhanderia/golden-dataset-mcp",
     "source": "github"
   },
   "version": "0.1.0",

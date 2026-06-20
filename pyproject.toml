@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Nipun Sharma" }
+    { name = "Nipun Khanderia" }
 ]
 keywords = ["mcp", "model-context-protocol", "rag", "evaluation", "golden-dataset", "llm-testing"]
 classifiers = [
@@ -44,9 +44,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nipun-sharma/golden-dataset-mcp"
-Repository = "https://github.com/nipun-sharma/golden-dataset-mcp"
-Issues = "https://github.com/nipun-sharma/golden-dataset-mcp/issues"
+Homepage = "https://github.com/nipunkhanderia/golden-dataset-mcp"
+Repository = "https://github.com/nipunkhanderia/golden-dataset-mcp"
+Issues = "https://github.com/nipunkhanderia/golden-dataset-mcp/issues"
 
 [project.scripts]
 golden-dataset-mcp = "golden_dataset_mcp.server:main"
